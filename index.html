@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<title>📝 استمارة التسجيل</title>
+<style>
+:root{--bg:#171009;--card:#241910;--line:#4a3520;--ac:#e8a33d;--ac2:#d9622b;--tx:#fbf3e4;--mut:#bba98f;--ok:#5bbd7a;--bad:#ef6a60}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%}
+body{background:radial-gradient(120% 70% at 50% 0,#3a2614,var(--bg)) fixed;color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;line-height:1.6;padding:max(16px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom))}
+.wrap{max-width:460px;margin:0 auto}
+header{text-align:center;padding:18px 0 14px}
+header .em{font-size:38px;line-height:1.2}
+h1{margin:4px 0 2px;font-size:22px;color:var(--ac)}
+header p{margin:0;color:var(--mut);font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 8px 30px #0006}
+.center{text-align:center}
+.prog{display:flex;gap:6px;margin:0 0 18px}
+.prog i{flex:1;height:6px;border-radius:4px;background:var(--line);transition:.25s}
+.prog i.on{background:linear-gradient(90deg,var(--ac),var(--ac2))}
+.f{margin-bottom:18px}
+label,.lb{display:block;font-weight:700;margin-bottom:2px}
+.h{color:var(--mut);font-size:13px;margin:0 0 8px}
+input[type=text]{width:100%;background:#150e08;border:1.5px solid var(--line);border-radius:12px;color:var(--tx);font:inherit;font-size:16px;padding:12px 14px;outline:none;transition:.2s}
+input[type=text]:focus{border-color:var(--ac)}
+input.bad{border-color:var(--bad)}
+input.good{border-color:var(--ok)}
+.s{min-height:22px;font-size:13px;margin-top:6px}
+.s.ok{color:var(--ok)}
+.s.bad{color:var(--bad)}
+.s.w{color:var(--mut)}
+.pick{display:flex;align-items:center;justify-content:center;border:1.5px dashed var(--line);border-radius:14px;padding:18px;cursor:pointer;color:var(--mut);text-align:center;min-height:110px;overflow:hidden;font-weight:400;margin:0}
+.pick.has{padding:0;border-style:solid;border-color:var(--ac)}
+.pick img{display:block;width:100%;max-height:280px;object-fit:cover}
+input[type=file]{display:none}
+button{font:inherit}
+.btn{display:block;width:100%;border:0;border-radius:14px;padding:14px;font-size:17px;font-weight:700;color:#1b1106;background:linear-gradient(90deg,var(--ac),var(--ac2));cursor:pointer;text-align:center;text-decoration:none}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.btn.alt{margin-top:12px;background:transparent;border:1.5px solid var(--line);color:var(--tx)}
+.rows{margin:14px 0;text-align:right}
+.row{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.row span{color:var(--mut)}
+.big{font-size:48px;line-height:1.2;margin-bottom:4px}
+.err{color:var(--bad);font-size:14px;margin:10px 0 0;text-align:center;min-height:20px}
+h2{margin:0 0 6px;font-size:20px}
+footer{text-align:center;color:var(--mut);font-size:12px;margin-top:18px}
+.spin{width:28px;height:28px;border:3px solid var(--line);border-top-color:var(--ac);border-radius:50%;animation:r .8s linear infinite;margin:8px auto}
+@keyframes r{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="em">🍁</div>
+    <h1>استمارة التسجيل</h1>
+    <p>أكمل بياناتك وستصل مباشرة للإدارة</p>
+  </header>
+  <main id="app"><div class="card center"><div class="spin"></div></div></main>
+  <footer>🇵🇸 𝑭. 𝑹. 𝑵⊰🍂⊱𝑭𝑬𝑹𝑶𝑵𝑨</footer>
+</div>
+<script>
+// ---- RELAY RPC BEGIN ----
+// الصفحة تكلّم البوت عبر وسيط ntfy: كل رسالة مشفّرة بمفتاح مشتق من توكن العضو (الموجود في رابطه فقط).
+// لو بدّلت الوسيط في البوت (RECEPTION_RELAY) أضف عنوانه هنا.
+var RELAYS = ['https://ntfy.sh'];
+var CFG = null;
+
+function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+function hex(u) { return Array.prototype.map.call(u, function (b) { return ('0' + b.toString(16)).slice(-2); }).join(''); }
+function b64(u) { var s = '', i; for (i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
+function unb64(s) { var b = atob(s), u = new Uint8Array(b.length), i; for (i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
+async function sha(s) { return new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s))); }
+
+function parseHash(h) {
+  var o = {};
+  String(h || '').replace(/^#/, '').split('&').forEach(function (p) {
+    var i = p.indexOf('=');
+    if (i > 0) { try { o[p.slice(0, i)] = decodeURIComponent(p.slice(i + 1)); } catch (e) {} }
+  });
+  return o;
+}
+
+// يرجع true لو الرابط سليم ومُهيّأ
+async function initCfg(hash) {
+  var p = parseHash(hash);
+  if (!/^[a-f0-9]{32}$/.test(p.t || '') || !/^[A-Za-z0-9_-]{1,64}$/.test(p.r || '') || RELAYS.indexOf(p.s) < 0) return false;
+  var tid = hex(await sha(p.t)).slice(0, 20);
+  var key = await crypto.subtle.importKey('raw', await sha('obito:' + p.t), 'AES-GCM', false, ['encrypt', 'decrypt']);
+  CFG = { relay: p.s.replace(/\/+$/, ''), topic: p.r, reply: p.r + '-' + tid, tid: tid, key: key };
+  return true;
+}
+
+async function dec(s) {
+  var u = unb64(s);
+  var pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: u.subarray(0, 12) }, CFG.key, u.subarray(12));
+  return new TextDecoder().decode(pt);
+}
+
+async function post(obj) {
+  var tries = 0;
+  for (;;) {
+    try {
+      var r = await fetch(CFG.relay + '/' + CFG.topic, { method: 'POST', body: JSON.stringify(obj) });
+      if (r.ok) return;
+      if (r.status === 429 || r.status >= 500) throw new Error('retry ' + r.status);
+      throw new Error('fatal ' + r.status);
+    } catch (e) {
+      tries++;
+      if (tries >= 4 || /fatal/.test(String(e.message))) throw e;
+      await sleep(1500 * tries);
+    }
+  }
+}
+
+async function waitReply(mid, timeout) {
+  var end = Date.now() + timeout;
+  while (Date.now() < end) {
+    try {
+      var r = await fetch(CFG.relay + '/' + CFG.reply + '/json?poll=1&since=all');
+      var lines = (await r.text()).split('\n');
+      for (var i = 0; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        try {
+          var ev = JSON.parse(lines[i]);
+          if (ev.event !== 'message') continue;
+          var obj = JSON.parse(await dec(JSON.parse(ev.message).d));
+          if (obj.m === mid) return obj;
+        } catch (e) {}
+      }
+    } catch (e) {}
+    await sleep(1200);
+  }
+  throw new Error('timeout');
+}
+
+// meta: {a:'state'|'check'|'submit', ...}  bytes: صورة JPEG اختيارية  → يرجع رد البوت
+async function rpc(meta, bytes, timeout, progress) {
+  var mid = (Math.random().toString(36) + '000000').slice(2, 12);
+  meta.m = mid;
+  var json = new TextEncoder().encode(JSON.stringify(meta));
+  var plain = new Uint8Array(4 + json.length + (bytes ? bytes.length : 0));
+  new DataView(plain.buffer).setUint32(0, json.length);
+  plain.set(json, 4);
+  if (bytes) plain.set(bytes, 4 + json.length);
+  var iv = crypto.getRandomValues(new Uint8Array(12));
+  var ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, CFG.key, plain));
+  var all = new Uint8Array(12 + ct.length);
+  all.set(iv, 0); all.set(ct, 12);
+  var data = b64(all), size = 3000, n = Math.ceil(data.length / size);
+  if (n > 60) throw new Error('too big');
+  var next = 0, done = 0;
+  async function worker() {
+    while (next < n) {
+      var k = next++;
+      await post({ v: 1, k: CFG.tid, m: mid, i: k, n: n, d: data.slice(k * size, (k + 1) * size) });
+      done++;
+      if (progress) progress(done, n);
+    }
+  }
+  await Promise.all([worker(), worker(), worker(), worker()]);
+  return waitReply(mid, timeout);
+}
+// ---- RELAY RPC END ----
+
+(function () {
+  var app = document.getElementById('app');
+  var JOIN = 'https://chat.whatsapp.com/';
+
+  function h(html) { var d = document.createElement('div'); d.innerHTML = html; return d.firstElementChild; }
+  function show(node) { app.innerHTML = ''; app.appendChild(node); window.scrollTo(0, 0); }
+
+  function msg(icon, title, text, retry) {
+    var c = h('<div class="card center"><div class="big"></div><h2></h2><p class="h" style="font-size:15px"></p></div>');
+    c.querySelector('.big').textContent = icon;
+    c.querySelector('h2').textContent = title;
+    c.querySelector('p').textContent = text;
+    if (retry) {
+      var b = h('<button class="btn alt" type="button">🔄 إعادة المحاولة</button>');
+      b.addEventListener('click', retry);
+      c.appendChild(b);
+    }
+    return c;
+  }
+
+  // شاشة النتيجة (تم التسجيل / مسجّل مسبقاً) مع زر دخول النقابة
+  function done(d, fresh) {
+    var c = h('<div class="card center"><div class="big"></div><h2></h2><p class="h" style="font-size:15px"></p>' +
+      '<div class="rows"><div class="row"><span>اللقب</span><b class="a"></b></div><div class="row"><span>الطرف</span><b class="b"></b></div></div></div>');
+    c.querySelector('.big').textContent = fresh ? '🎉' : '✅';
+    c.querySelector('h2').textContent = fresh ? 'تم التسجيل بنجاح' : 'أنت مسجّل مسبقاً';
+    c.querySelector('p').textContent = fresh
+      ? 'وصلت استمارتك للإدارة، وبعد موافقتهم يُرحَّب بك في النقابة'
+      : 'لا حاجة لإعادة التسجيل، تقدر تدخل النقابة من الزر التالي';
+    c.querySelector('.a').textContent = d.laqab || '';
+    var b = c.querySelector('.b');
+    if (d.inviter) b.textContent = d.inviter; else b.parentNode.parentNode.removeChild(b.parentNode);
+    if (d.link && String(d.link).indexOf(JOIN) === 0) {
+      var a = h('<a class="btn"></a>');
+      a.href = d.link; a.textContent = '🏰 دخول النقابة الأساسية';
+      c.appendChild(a);
+    } else {
+      var n = h('<p class="h"></p>');
+      n.textContent = '⚠️ رابط النقابة لم يُحفظ بعد، تواصل مع الإدارة';
+      c.appendChild(n);
+    }
+    return c;
+  }
+
+  // يصغّر الصورة ويحوّلها JPEG خفيف (≈ 60KB) عشان تمرّ عبر الوسيط بسرعة
+  function shrink(file) {
+    return new Promise(function (res, rej) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        URL.revokeObjectURL(url);
+        var ladder = [[720, 0.72], [640, 0.65], [560, 0.6], [480, 0.55], [420, 0.5], [360, 0.45]], out = null;
+        for (var k = 0; k < ladder.length; k++) {
+          var w = img.naturalWidth, hh = img.naturalHeight, s = Math.min(1, ladder[k][0] / Math.max(w, hh));
+          var cv = document.createElement('canvas');
+          cv.width = Math.max(1, Math.round(w * s)); cv.height = Math.max(1, Math.round(hh * s));
+          var x = cv.getContext('2d');
+          x.fillStyle = '#fff'; x.fillRect(0, 0, cv.width, cv.height);
+          x.drawImage(img, 0, 0, cv.width, cv.height);
+          out = cv.toDataURL('image/jpeg', ladder[k][1]);
+          if (out.length * 0.75 <= 60 * 1024) break;
+        }
+        res(out);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); rej(new Error('bad image')); };
+      img.src = url;
+    });
+  }
+
+  function form() {
+    var c = h('<div class="card">' +
+      '<div class="prog"><i></i><i></i><i></i></div>' +
+      '<div class="f"><label for="inv">١️⃣ من طرف من دخلت؟</label><p class="h">اكتب لقب الشخص الذي أعطاك رابط الدخول</p>' +
+      '<input id="inv" type="text" maxlength="60" autocomplete="off"></div>' +
+      '<div class="f"><label for="laq">٢️⃣ اكتب لقبك</label><p class="h">هذا هو اسمك المعتمد داخل النقابة، ولن يُقبل لقب مأخوذ مسبقاً</p>' +
+      '<input id="laq" type="text" maxlength="40" autocomplete="off"><div class="s w" id="ls"></div></div>' +
+      '<div class="f"><div class="lb">٣️⃣ صورة لقبك 🖼️</div><p class="h">ستظهر صورتك مع بياناتك للإدارة</p>' +
+      '<label class="pick" id="pk" for="ph"><span>📷 اضغط لاختيار الصورة</span></label>' +
+      '<input id="ph" type="file" accept="image/*"></div>' +
+      '<button class="btn" id="go" type="button" disabled>📨 إرسال الاستمارة</button><div class="err" id="er"></div></div>');
+
+    var inv = c.querySelector('#inv'), laq = c.querySelector('#laq'), ls = c.querySelector('#ls');
+    var ph = c.querySelector('#ph'), pk = c.querySelector('#pk'), go = c.querySelector('#go'), er = c.querySelector('#er');
+    var bars = c.querySelectorAll('.prog i');
+    var photo = null, laqOk = false, timer = null, seq = 0, sending = false;
+
+    function upd() {
+      var a = inv.value.trim().length > 0, b = laqOk, d = !!photo;
+      bars[0].className = a ? 'on' : ''; bars[1].className = b ? 'on' : ''; bars[2].className = d ? 'on' : '';
+      go.disabled = sending || !(a && b && d);
+    }
+    function setLaq(cls, txt) { ls.className = 's ' + cls; ls.textContent = txt; }
+
+    inv.addEventListener('input', upd);
+
+    laq.addEventListener('input', function () {
+      laqOk = false; laq.className = '';
+      var v = laq.value.trim();
+      clearTimeout(timer);
+      if (!v) { setLaq('w', ''); upd(); return; }
+      setLaq('w', '⏳ جاري التحقق من اللقب…'); upd();
+      var my = ++seq;
+      timer = setTimeout(function () {
+        rpc({ a: 'check', q: v }, null, 20000)
+          .then(function (j) {
+            if (my !== seq) return;
+            if (j.state && j.state !== 'ok') { show(j.state === 'banned' ? msg('🚫', 'لا يمكنك التسجيل', '') : done(j, false)); return; }
+            if (typeof j.taken !== 'boolean') { setLaq('bad', '⚠️ تعذر التحقق، حاول مرة أخرى'); return; }
+            if (j.taken) { laq.className = 'bad'; setLaq('bad', '❌ هذا اللقب مأخوذ، اختر لقباً غيره'); }
+            else { laq.className = 'good'; setLaq('ok', '✅ اللقب متاح'); laqOk = true; }
+            upd();
+          })
+          .catch(function () { if (my === seq) setLaq('bad', '⚠️ البوت لا يرد الآن، أعد كتابة اللقب بعد قليل'); });
+      }, 1000);
+    });
+
+    ph.addEventListener('change', function () {
+      var f = ph.files && ph.files[0];
+      if (!f) return;
+      er.textContent = ''; photo = null; upd();
+      shrink(f).then(function (d) {
+        photo = unb64(d.split(',')[1]);
+        pk.className = 'pick has'; pk.innerHTML = '';
+        var im = new Image(); im.src = d; pk.appendChild(im);
+        upd();
+      }).catch(function () { er.textContent = '🖼️ ما قدرت أقرأ هذه الصورة، جرّب صورة أخرى'; });
+    });
+
+    go.addEventListener('click', function () {
+      if (sending) return;
+      sending = true; go.disabled = true; er.textContent = ''; go.textContent = '⏳ جاري الرفع…';
+      function reset() { sending = false; go.textContent = '📨 إرسال الاستمارة'; upd(); }
+      rpc({ a: 'submit', inviter: inv.value, laqab: laq.value }, photo, 90000, function (d, n) {
+        go.textContent = d < n ? '⏳ جاري الرفع ' + d + '/' + n : '⏳ بانتظار البوت…';
+      })
+        .then(function (j) {
+          if (j.ok) { show(done(j, true)); return; }
+          if (j.error === 'registered') { show(done(j, false)); return; }
+          if (j.error === 'banned') { show(msg('🚫', 'لا يمكنك التسجيل', '')); return; }
+          if (j.error === 'invalid') { show(msg('⌛', 'الرابط غير صالح', j.message || '')); return; }
+          if (j.error === 'taken') { laqOk = false; laq.className = 'bad'; setLaq('bad', '❌ هذا اللقب مأخوذ، اختر لقباً غيره'); }
+          er.textContent = j.message || '⚠️ حصل خطأ، حاول مرة أخرى';
+          reset();
+        })
+        .catch(function () {
+          er.textContent = '⚠️ ما وصلني رد من البوت. إذا انقطع النت أعد المحاولة، وإذا أرسلتها فعلاً افتح الرابط من جديد لتشوف حالتك.';
+          reset();
+        });
+    });
+    return c;
+  }
+
+  function start() {
+    show(h('<div class="card center"><div class="spin"></div></div>'));
+    rpc({ a: 'state' }, null, 25000)
+      .then(function (j) {
+        if (j.state === 'ok') show(form());
+        else if (j.state === 'done') show(done(j, true));
+        else if (j.state === 'registered') show(done(j, false));
+        else if (j.state === 'banned') show(msg('🚫', 'لا يمكنك التسجيل', ''));
+        else show(msg('⌛', 'الرابط غير صالح', j.message || 'انتهت صلاحية هذا الرابط. اضغط زر التسجيل في جروب الاستقبال لتحصل على رابط جديد.'));
+      })
+      .catch(function () { show(msg('⚠️', 'البوت لا يرد حالياً', 'تأكد من اتصالك وحاول بعد قليل.', start)); });
+  }
+
+  initCfg(location.hash).then(function (ok) {
+    if (!ok) { show(msg('🔗', 'رابط غير صالح', 'افتح الاستمارة من الزر في جروب الاستقبال.')); return; }
+    start();
+  }).catch(function () { show(msg('⚠️', 'متصفحك لا يدعم هذه الصفحة', 'جرّب فتح الرابط في كروم أو سفاري.')); });
+})();
+</script>
+</body>
+</html>
